@@ -348,22 +348,23 @@ impl Context {
         // the guest function returns into lucet_context_backstop.
         stack[sp + 2 - stack_start] = lucet_context_backstop as u64;
 
+        // Terminate the call chain.
+        stack[sp - 4] = 0;
+        stack[sp - 3] = 0;
+
         // if fptr ever returns, it returns to the backstop func. backstop needs two arguments in
         // its frame - first the context we are switching *out of* (which is also the one we are
         // creating right now) and the ctx we switch back into. Note *parent might not be a valid
         // ctx now, but it should be when this ctx is started.
-        stack[sp - 4] = child as *mut Context as u64;
-        stack[sp - 3] = parent as *mut Context as u64;
-        // Terminate the call chain.
-        stack[sp - 2] = 0;
-        stack[sp - 1] = 0;
+        stack[sp - 2] = child as *mut Context as u64;
+        stack[sp - 1] = parent as *mut Context as u64;
 
         // RSP, RBP, and sigset still remain to be initialized.
         // Stack pointer: this has the return address of the first function to be run on the swap.
         child.gpr.rsp = &mut stack[sp - stack_start] as *mut u64 as u64;
         // Frame pointer: this is only used by the backstop code. It uses it to locate the ctx and
         // parent arguments set above.
-        child.gpr.rbp = &mut stack[sp - 2] as *mut u64 as u64;
+        child.gpr.rbp = &mut stack[sp - 4] as *mut u64 as u64;
 
         // Read the sigprocmask to be restored if we ever need to jump out of a signal handler. If
         // this isn't possible, die.
