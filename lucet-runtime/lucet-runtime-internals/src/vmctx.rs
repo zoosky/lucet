@@ -58,6 +58,20 @@ pub trait VmctxInternal {
     /// you could not use orthogonal `&mut` refs that come from `Vmctx`, like the heap or
     /// terminating the instance.
     unsafe fn instance_mut(&self) -> &mut Instance;
+
+    /// Increment the hostcall nesting level.
+    ///
+    /// This must be done whenever entering a hostcall implementation.
+    fn increment_hostcall_nesting(&self);
+
+    /// Decrement the hostcall nesting level.
+    ///
+    /// This must be done whenever a hostcall implementation returns, but before any unwinding logic
+    /// is evaluated.
+    fn decrement_hostcall_nesting(&self);
+
+    /// Returns `true` if there are hostcall stack segments present on the guest stack.
+    fn in_nested_hostcall(&self) -> bool;
 }
 
 impl VmctxInternal for Vmctx {
@@ -67,6 +81,27 @@ impl VmctxInternal for Vmctx {
 
     unsafe fn instance_mut(&self) -> &mut Instance {
         instance_from_vmctx(self.vmctx)
+    }
+
+    fn increment_hostcall_nesting(&self) {
+        let inst = unsafe { self.instance_mut() };
+        inst.hostcall_nesting = inst
+            .hostcall_nesting
+            .checked_add(1)
+            .expect("hostcall nesting level overflowed");
+    }
+
+    fn decrement_hostcall_nesting(&self) {
+        let inst = unsafe { self.instance_mut() };
+        debug_assert!(inst.hostcall_nesting > 0);
+        inst.hostcall_nesting = inst
+            .hostcall_nesting
+            .checked_sub(1)
+            .expect("hostcall nesting level underflowed");
+    }
+
+    fn in_nested_hostcall(&self) -> bool {
+        self.instance().hostcall_nesting > 0
     }
 }
 

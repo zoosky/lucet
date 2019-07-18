@@ -216,6 +216,16 @@ pub struct Instance {
     /// Pointer to the function used as the entrypoint (for use in backtraces)
     entrypoint: Option<FunctionPointer>,
 
+    /// The number of nested hostcalls currently present on the guest stack.
+    ///
+    /// Primarily used when implementing instance termination, this represents the number of times
+    /// unwinding must continue in order to unwind through all hostcall segments of the guest stack.
+    ///
+    /// For example, if the guest calls `host_fn1()`, which in turn calls back into `guest_fn1()`,
+    /// which calls `host_fn2()`, the value of this field must be `2` while `host_fn2()` is
+    /// executing. This number is automatically managed by the `lucet_hostcalls!` macro.
+    pub(crate) hostcall_nesting: usize,
+
     /// `_padding` must be the last member of the structure.
     /// This marks where the padding starts to make the structure exactly 4096 bytes long.
     /// It is also used to compute the size of the structure up to that point, i.e. without padding.
@@ -517,6 +527,7 @@ impl Instance {
             c_fatal_handler: None,
             signal_handler: Box::new(signal_handler_none) as Box<SignalHandler>,
             entrypoint: None,
+            hostcall_nesting: 0,
             _padding: (),
         };
         inst.set_globals_ptr(globals_ptr);

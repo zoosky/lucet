@@ -27,6 +27,8 @@ macro_rules! host_tests {
 
         lazy_static! {
             static ref HOSTCALL_MUTEX: Mutex<()> = Mutex::new(());
+            static ref HOSTCALL_MUTEX_1: Mutex<()> = Mutex::new(());
+            static ref HOSTCALL_MUTEX_2: Mutex<()> = Mutex::new(());
         }
 
         lucet_hostcalls! {
@@ -60,6 +62,37 @@ macro_rules! host_tests {
                 &mut vmctx,
             ) -> () {
                 let lock = HOSTCALL_MUTEX.lock().unwrap();
+                unsafe {
+                    lucet_hostcall_terminate!(ERROR_MESSAGE);
+                }
+                drop(lock);
+            }
+
+            #[no_mangle]
+            pub unsafe extern "C" fn hostcall_test_func_hostcall_nested_error_unwind1(
+                &mut vmctx,
+                cb_idx: u32,
+            ) -> () {
+                let lock = HOSTCALL_MUTEX_1.lock().unwrap();
+
+                let func = vmctx
+                    .get_func_from_idx(0, cb_idx)
+                    .expect("can get function by index");
+                let func = std::mem::transmute::<
+                    usize,
+                    extern "C" fn(*mut lucet_vmctx)
+                >(func.ptr.as_usize());
+                (func)(vmctx.as_raw());
+
+                drop(lock);
+            }
+
+            #[allow(unreachable_code)]
+            #[no_mangle]
+            pub unsafe extern "C" fn hostcall_test_func_hostcall_nested_error_unwind2(
+                &mut vmctx,
+            ) -> () {
+                let lock = HOSTCALL_MUTEX_2.lock().unwrap();
                 unsafe {
                     lucet_hostcall_terminate!(ERROR_MESSAGE);
                 }
@@ -186,6 +219,33 @@ macro_rules! host_tests {
             }
 
             assert!(HOSTCALL_MUTEX.is_poisoned());
+        }
+
+        #[test]
+        fn run_hostcall_nested_error_unwind() {
+            let module =
+                test_module_c("host", "hostcall_nested_error_unwind.c").expect("build and load module");
+            let region = TestRegion::create(1, &Limits::default()).expect("region can be created");
+            let mut inst = region
+                .new_instance(module)
+                .expect("instance can be created");
+
+            match inst.run("main", &[0u32.into(), 0u32.into()]) {
+                Err(Error::RuntimeTerminated(term)) => {
+                    assert_eq!(
+                        *term
+                            .provided_details()
+                            .expect("user provided termination reason")
+                            .downcast_ref::<&'static str>()
+                            .expect("error was static str"),
+                        ERROR_MESSAGE
+                    );
+                }
+                res => panic!("unexpected result: {:?}", res),
+            }
+
+            assert!(HOSTCALL_MUTEX_1.is_poisoned());
+            assert!(HOSTCALL_MUTEX_2.is_poisoned());
         }
 
         #[test]

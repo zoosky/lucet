@@ -38,6 +38,8 @@ macro_rules! lucet_hostcalls {
                 vmctx_raw: *mut $crate::vmctx::lucet_vmctx,
                 $( $arg: $arg_ty ),*
             ) -> $ret_ty {
+                use $crate::vmctx::VmctxInternal;
+
                 #[inline(always)]
                 unsafe fn hostcall_impl(
                     $vmctx: &mut $crate::vmctx::Vmctx,
@@ -45,12 +47,29 @@ macro_rules! lucet_hostcalls {
                 ) -> $ret_ty {
                     $($body)*
                 }
+
+                let mut vmctx = $crate::vmctx::Vmctx::from_raw(vmctx_raw);
+
+                // increment the nesting level before calling the implementation...
+                vmctx.increment_hostcall_nesting();
                 let res = std::panic::catch_unwind(move || {
                     hostcall_impl(&mut $crate::vmctx::Vmctx::from_raw(vmctx_raw), $( $arg ),*)
                 });
+                // and decrement it afterwards, whether or not there was a panic
+                vmctx.decrement_hostcall_nesting();
+
+                // get this as a stack variable so that vmctx doesn't leak if we terminate below
+                let in_nested_hostcall = vmctx.in_nested_hostcall();
+                drop(vmctx);
+
                 match res {
                     Ok(res) => res,
                     Err(e) => {
+                        // only terminate once we've unwound through all hostcall segments of the
+                        // guest stack
+                        if in_nested_hostcall {
+                            std::panic::resume_unwind(e);
+                        }
                         if let Some(details) = e.downcast_ref::<$crate::instance::TerminationDetails>() {
                             let mut vmctx = $crate::vmctx::Vmctx::from_raw(vmctx_raw);
                             vmctx.terminate_no_unwind(details.clone());

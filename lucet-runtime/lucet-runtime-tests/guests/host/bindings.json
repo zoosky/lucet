@@ -2,6 +2,8 @@
     "env": {
         "hostcall_test_func_hello": "hostcall_test_func_hello",
         "hostcall_test_func_hostcall_error": "hostcall_test_func_hostcall_error",
-        "hostcall_test_func_hostcall_error_unwind": "hostcall_test_func_hostcall_error_unwind"
+        "hostcall_test_func_hostcall_error_unwind": "hostcall_test_func_hostcall_error_unwind",
+        "hostcall_test_func_hostcall_nested_error_unwind1": "hostcall_test_func_hostcall_nested_error_unwind1",
+        "hostcall_test_func_hostcall_nested_error_unwind2": "hostcall_test_func_hostcall_nested_error_unwind2"
     }
 }
