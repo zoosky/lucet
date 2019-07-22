@@ -45,20 +45,20 @@ macro_rules! lucet_hostcalls {
                 ) -> $ret_ty {
                     $($body)*
                 }
-                let res = std::panic::catch_unwind(move || {
+                // let res = std::panic::catch_unwind(move || {
                     hostcall_impl(&mut $crate::vmctx::Vmctx::from_raw(vmctx_raw), $( $arg ),*)
-                });
-                match res {
-                    Ok(res) => res,
-                    Err(e) => {
-                        if let Some(details) = e.downcast_ref::<$crate::instance::TerminationDetails>() {
-                            let mut vmctx = $crate::vmctx::Vmctx::from_raw(vmctx_raw);
-                            vmctx.terminate_no_unwind(details.clone());
-                        } else {
-                            std::panic::resume_unwind(e);
-                        }
-                    }
-                }
+                // });
+                // match res {
+                //     Ok(res) => res,
+                //     Err(e) => {
+                //         if let Some(details) = e.downcast_ref::<$crate::instance::TerminationDetails>() {
+                //             let mut vmctx = $crate::vmctx::Vmctx::from_raw(vmctx_raw);
+                //             vmctx.terminate_no_unwind(details.clone());
+                //         } else {
+                //             std::panic::resume_unwind(e);
+                //         }
+                //     }
+                // }
             }
         )*
     }
