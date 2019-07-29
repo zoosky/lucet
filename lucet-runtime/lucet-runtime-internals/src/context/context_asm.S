@@ -53,13 +53,24 @@ _lucet_context_bootstrap:
 #endif
 
 .text
+.globl libunwind_backstop_shim
+.align 16
+// unsure if `simple` is necessary here. GAS docs suggest this may omit some initial CFI instructions, and i want this to be as barren as possible for now.
+.cfi_startproc simple
+.cfi_personality 0,win
+    // this nop is load-bearing. We set up the backstop with a cfi_personality function so that stack unwinding through
+    // guest code ends at a handler which can recover and switch back to the host.
+    // However: libunwind doesn't treat the start of `lucet_context_backstop` as `lucet_context_backstop` but as the end
+    // of `lucet_context_bootstrap`. so to get the unwinder to reach information about this function, start the unwind
+    // region slightly before the real address we use, and place an address after the start, unambiguously referring to
+    // the backstop function, on the stack for guests (and libunwind!) to eventually reach.
+    nop
 .globl lucet_context_backstop
 #ifdef __ELF__
 .type lucet_context_backstop,@function
 #else
 .globl _lucet_context_backstop
 #endif
-.align 16
 lucet_context_backstop:
 _lucet_context_backstop:
     mov 16(%rbp), %rdi  /* parent context to arg 1 */
@@ -72,6 +83,7 @@ _lucet_context_backstop:
 #else
     jmp lucet_context_swap
 #endif
+.cfi_endproc
 #ifdef __ELF__
 .size lucet_context_backstop,.-lucet_context_backstop
 #endif
