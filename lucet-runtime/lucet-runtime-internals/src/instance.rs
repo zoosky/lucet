@@ -1,5 +1,6 @@
 mod siginfo_ext;
 pub mod signals;
+mod unwind;
 
 pub use crate::instance::signals::{signal_handler_none, SignalBehavior, SignalHandler};
 
