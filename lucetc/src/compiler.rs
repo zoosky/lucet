@@ -155,6 +155,8 @@ impl<'a> Compiler<'a> {
             })
             .collect();
 
+        self.clif_module.finalize_definitions();
+
         let obj = ObjectFile::new(
             self.clif_module.finish(),
             module_data_len,

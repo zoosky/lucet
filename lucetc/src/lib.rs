@@ -326,6 +326,7 @@ where
 {
     use std::process::Command;
     let mut cmd_ld = Command::new(env::var("LD").unwrap_or(LD_DEFAULT.into()));
+    cmd_ld.arg("--eh-frame-hdr");
     cmd_ld.arg(objpath.as_ref());
     let env_ldflags = env::var("LDFLAGS").unwrap_or(LDFLAGS_DEFAULT.into());
     for flag in env_ldflags.split_whitespace() {
