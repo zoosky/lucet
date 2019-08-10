@@ -39,7 +39,7 @@ thread_local! {
     /// the swap. Meanwhile, the signal handler can run at any point during the guest function, and
     /// so it also must be able to immutably borrow the host context if it needs to swap back. The
     /// runtime borrowing constraints for a `RefCell` are therefore too strict for this variable.
-    pub(crate) static HOST_CTX: UnsafeCell<Context> = UnsafeCell::new(Context::new());
+    pub static HOST_CTX: UnsafeCell<Context> = UnsafeCell::new(Context::new());
 
     /// The currently-running `Instance`, if one exists.
     pub(crate) static CURRENT_INSTANCE: RefCell<Option<NonNull<Instance>>> = RefCell::new(None);
@@ -615,8 +615,8 @@ impl Instance {
                 // lucet context is linked to host_ctx, so it will return here after it finishes,
                 // successfully or otherwise.
                 unsafe { Context::swap(&mut *host_ctx.get(), &mut i.ctx) };
-                Ok(())
-            })
+            });
+            Ok(())
         })?;
 
         CURRENT_INSTANCE.with(|current_instance| {
@@ -629,6 +629,12 @@ impl Instance {
         // * function body returned: set state back to `Ready` with return value
 
         match &self.state {
+            State::Panicking { exception_obj } => {
+                unsafe {
+                    unwind::_Unwind_RaiseException(*exception_obj);
+                }
+                unreachable!()
+            }
             State::Running => {
                 let retval = self.ctx.get_untyped_retval();
                 self.state = State::Ready { retval };
@@ -707,6 +713,9 @@ pub enum State {
     },
     Terminated {
         details: TerminationDetails,
+    },
+    Panicking {
+        exception_obj: *mut unwind::_Unwind_Exception,
     },
 }
 
@@ -861,6 +870,7 @@ impl std::fmt::Display for State {
                 Ok(())
             }
             State::Terminated { .. } => write!(f, "terminated"),
+            State::Panicking { .. } => write!(f, "panicking"),
         }
     }
 }

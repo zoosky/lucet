@@ -100,6 +100,18 @@ macro_rules! host_tests {
 
                 res
             }
+
+            #[no_mangle]
+            pub unsafe extern "C" fn hostcall_print_host_rsp(
+                &mut vmctx,
+            ) -> () {
+                use lucet_runtime_internals::instance::HOST_CTX;
+                HOST_CTX.with(|host_ctx| {
+                    let ctx = host_ctx.get();
+                    eprintln!("host's context at {:p}", ctx);
+                    eprintln!("host's stored rsp = 0x{:x}", (*ctx).gpr.rsp);
+                });
+            }
         }
 
         #[test]
@@ -204,6 +216,31 @@ macro_rules! host_tests {
                     panic!("unexpected result: {:?}", res);
                 }
             }
+        }
+
+        #[test]
+        fn run_hostcall_print_host_rsp() {
+            extern "C" {
+                fn hostcall_print_host_rsp(vmctx: *mut lucet_vmctx);
+            }
+
+            unsafe extern "C" fn f(vmctx: *mut lucet_vmctx) {
+                hostcall_print_host_rsp(vmctx);
+            }
+
+            let module = MockModuleBuilder::new()
+                .with_export_func(MockExportBuilder::new(
+                    "f",
+                    FunctionPointer::from_usize(f as usize),
+                ))
+                .build();
+
+            let region = TestRegion::create(1, &Limits::default()).expect("region can be created");
+            let mut inst = region
+                .new_instance(module)
+                .expect("instance can be created");
+
+            inst.run("f", &[]).unwrap();
         }
 
         #[test]

@@ -57,7 +57,17 @@ _lucet_context_bootstrap:
 .align 16
 // unsure if `simple` is necessary here. GAS docs suggest this may omit some initial CFI instructions, and i want this to be as barren as possible for now.
 .cfi_startproc simple
-.cfi_personality 0,win
+// .cfi_personality 0,win
+    .cfi_escape 0x0f, /* DW_CFA_def_cfa_expression */ \
+                8, /* uleb128 length of expression bytes */ \
+                0x76, 0x18, /* DW_OP_breg5 (put rbp + 24 on the stack; should be a pointer to the parent context's address) */ \
+                0x06, /* DW_OP_deref should then leave the parent context pointer on the stack */ \
+                0x23, 0x08, /* DW_OP_plus_uconst (add 8 to the base of context to point to saved rsp) */ \
+                0x06, /* deref */ \
+                0x23, 0x08 /* add 8 for good luck? */
+
+    .cfi_offset 16, -8 /* return address value is stored at is CFA -8 */
+
     // this nop is load-bearing. We set up the backstop with a cfi_personality function so that stack unwinding through
     // guest code ends at a handler which can recover and switch back to the host.
     // However: libunwind doesn't treat the start of `lucet_context_backstop` as `lucet_context_backstop` but as the end
@@ -73,8 +83,8 @@ _lucet_context_bootstrap:
 #endif
 lucet_context_backstop:
 _lucet_context_backstop:
-    mov 16(%rbp), %rdi  /* parent context to arg 1 */
-    mov 24(%rbp), %rsi  /* own context to arg 2 */
+    mov 16(%rbp), %rdi  /* own context to arg 1 */
+    mov 24(%rbp), %rsi  /* parent context to arg 2 */
     mov %rax, (8*8 + 8*16 + 8*0)(%rdi) /* store return values before swapping back -- offset is offsetof(struct lucet_context, retvals) */
     mov %rdx, (8*8 + 8*16 + 8*1)(%rdi)
     movdqu %xmm0, (8*8 + 8*16 + 8*2)(%rdi) /* floating-point return value */

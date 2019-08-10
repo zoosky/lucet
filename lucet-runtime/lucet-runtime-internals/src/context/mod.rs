@@ -25,9 +25,9 @@ use xfailure::xbail;
 /// <https://doc.rust-lang.org/nomicon/other-reprs.html#reprpacked>. Since the members are all
 /// `u64`, this should be fine?
 #[repr(C)]
-struct GpRegs {
+pub struct GpRegs {
     rbx: u64,
-    rsp: u64,
+    pub rsp: u64,
     rbp: u64,
     rdi: u64,
     r12: u64,
@@ -110,7 +110,7 @@ impl FpRegs {
 /// that pointer becomes invalid, and the behavior of returning from that context becomes undefined.
 #[repr(C, align(64))]
 pub struct Context {
-    gpr: GpRegs,
+    pub gpr: GpRegs,
     fpr: FpRegs,
     retvals_gp: [u64; 2],
     retval_fp: __m128,
@@ -632,5 +632,5 @@ extern "C" {
     /// Performs the context switch; implemented in assembly.
     ///
     /// Never returns because the current context is discarded.
-    fn lucet_context_set(to: *const Context) -> !;
+    pub(crate) fn lucet_context_set(to: *const Context) -> !;
 }

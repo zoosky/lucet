@@ -271,6 +271,7 @@ pub mod lucet_state {
                         },
                     },
                 },
+                State::Panicking { .. } => unimplemented!(),
             }
         }
     }
