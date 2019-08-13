@@ -1,6 +1,5 @@
 mod siginfo_ext;
 pub mod signals;
-mod unwind;
 
 pub use crate::instance::signals::{signal_handler_none, SignalBehavior, SignalHandler};
 
@@ -629,12 +628,6 @@ impl Instance {
         // * function body returned: set state back to `Ready` with return value
 
         match &self.state {
-            State::Panicking { exception_obj } => {
-                unsafe {
-                    unwind::_Unwind_RaiseException(*exception_obj);
-                }
-                unreachable!()
-            }
             State::Running => {
                 let retval = self.ctx.get_untyped_retval();
                 self.state = State::Ready { retval };
@@ -713,9 +706,6 @@ pub enum State {
     },
     Terminated {
         details: TerminationDetails,
-    },
-    Panicking {
-        exception_obj: *mut unwind::_Unwind_Exception,
     },
 }
 
@@ -870,7 +860,6 @@ impl std::fmt::Display for State {
                 Ok(())
             }
             State::Terminated { .. } => write!(f, "terminated"),
-            State::Panicking { .. } => write!(f, "panicking"),
         }
     }
 }
