@@ -106,6 +106,12 @@ macro_rules! host_tests {
                 &mut vmctx,
             ) -> () {
                 use lucet_runtime_internals::instance::HOST_CTX;
+                use lucet_runtime_internals::vmctx::VmctxInternal;
+                let inst = vmctx.instance();
+                eprintln!("guest's context at {:p}", &inst.ctx);
+                inst.alloc.slot.as_ref().map(|slot| {
+                    eprintln!("guest's stack highest addr = {:p}", slot.stack_top());
+                });
                 HOST_CTX.with(|host_ctx| {
                     let ctx = host_ctx.get();
                     eprintln!("host's context at {:p}", ctx);
