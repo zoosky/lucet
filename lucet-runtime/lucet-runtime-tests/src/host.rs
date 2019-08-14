@@ -123,6 +123,61 @@ macro_rules! host_tests {
             }
 
             #[no_mangle]
+            pub unsafe extern "C" fn restore_callee_saved(
+                &mut vmctx,
+                cb_idx: u32,
+            ) -> u64 {
+                let mut a: u64;
+                let mut b: u64 = 0xAAAAAAAA00000001;
+                let mut c: u64 = 0xAAAAAAAA00000002;
+                let mut d: u64 = 0xAAAAAAAA00000003;
+                let mut e: u64 = 0xAAAAAAAA00000004;
+                let mut f: u64 = 0xAAAAAAAA00000005;
+                let mut g: u64 = 0xAAAAAAAA00000006;
+                let mut h: u64 = 0xAAAAAAAA00000007;
+                let mut i: u64 = 0xAAAAAAAA00000008;
+                let mut j: u64 = 0xAAAAAAAA00000009;
+                let mut k: u64 = 0xAAAAAAAA0000000A;
+                let mut l: u64 = 0xAAAAAAAA0000000B;
+
+                a = b.wrapping_add(c ^ 0);
+                b = c.wrapping_add(d ^ 1);
+                c = d.wrapping_add(e ^ 2);
+                d = e.wrapping_add(f ^ 3);
+                e = f.wrapping_add(g ^ 4);
+                f = g.wrapping_add(h ^ 5);
+                g = h.wrapping_add(i ^ 6);
+                h = i.wrapping_add(j ^ 7);
+                i = j.wrapping_add(k ^ 8);
+                j = k.wrapping_add(l ^ 9);
+                k = l.wrapping_add(a ^ 10);
+                l = a.wrapping_add(b ^ 11);
+
+                let func = vmctx
+                    .get_func_from_idx(0, cb_idx)
+                    .expect("can get function by index");
+                let func = std::mem::transmute::<usize, extern "C" fn(*mut lucet_vmctx) -> u64>(
+                    func.ptr.as_usize(),
+                );
+                (func)(vmctx.as_raw());
+
+                a = b.wrapping_mul(c & 0);
+                b = c.wrapping_mul(d & 1);
+                c = d.wrapping_mul(e & 2);
+                d = e.wrapping_mul(f & 3);
+                e = f.wrapping_mul(g & 4);
+                f = g.wrapping_mul(h & 5);
+                g = h.wrapping_mul(i & 6);
+                h = i.wrapping_mul(j & 7);
+                i = j.wrapping_mul(k & 8);
+                j = k.wrapping_mul(l & 9);
+                k = l.wrapping_mul(a & 10);
+                l = a.wrapping_mul(b & 11);
+
+                a ^ b ^ c ^ d ^ e ^ f ^ g ^ h ^ i ^ j ^ k ^ l
+            }
+
+            #[no_mangle]
             pub unsafe extern "C" fn hostcall_bad_borrow(
                 &mut vmctx,
             ) -> bool {
