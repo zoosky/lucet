@@ -122,8 +122,17 @@ macro_rules! host_tests {
                 unwind_inner(vmctx, &*NESTED_REGS_INNER)
             }
 
+            // #[unwind(allowed)]
             #[no_mangle]
-            pub unsafe extern "C" fn restore_callee_saved(
+            pub unsafe extern "C" fn hostcall_panic(
+                &mut _vmctx,
+            ) -> () {
+                panic!("hostcall_panic");
+            }
+
+            // #[unwind(allowed)]
+            #[no_mangle]
+            pub unsafe extern "C" fn hostcall_restore_callee_saved(
                 &mut vmctx,
                 cb_idx: u32,
             ) -> u64 {
@@ -159,7 +168,11 @@ macro_rules! host_tests {
                 let func = std::mem::transmute::<usize, extern "C" fn(*mut lucet_vmctx) -> u64>(
                     func.ptr.as_usize(),
                 );
-                (func)(vmctx.as_raw());
+                let vmctx_raw = vmctx.as_raw();
+                let res = std::panic::catch_unwind(|| {
+                    (func)(vmctx_raw);
+                });
+                assert!(res.is_err());
 
                 a = b.wrapping_mul(c & 0);
                 b = c.wrapping_mul(d & 1);
@@ -373,6 +386,24 @@ macro_rules! host_tests {
 
             assert!(NESTED_REGS_OUTER.is_poisoned());
             assert!(NESTED_REGS_INNER.is_poisoned());
+        }
+
+        /// Ensures that callee-saved registers are properly restored following a `catch_unwind`
+        /// that catches a panic. Currently disabled because it relies on UB until
+        /// `#[unwind(allowed)]` is stabilized.
+        #[ignore]
+        #[test]
+        fn restore_callee_saved() {
+            let module =
+                test_module_c("host", "nested_error_unwind.c").expect("build and load module");
+            let region = TestRegion::create(1, &Limits::default()).expect("region can be created");
+            let mut inst = region
+                .new_instance(module)
+                .expect("instance can be created");
+            assert_eq!(
+                u64::from(inst.run("entrypoint_restore", &[]).unwrap()),
+                6148914668330025056
+            );
         }
 
         #[test]
