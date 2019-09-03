@@ -10,7 +10,7 @@ fn context_init(c: &mut Criterion) {
     c.bench_function("context_init", move |b| {
         b.iter(|| {
             let mut parent = ContextHandle::new();
-            ContextHandle::create_and_init(&mut *stack, &mut parent, f as usize, &[]).unwrap();
+            ContextHandle::create_and_init(&mut *stack, &mut parent, f as usize, &[], std::ptr::null_mut()).unwrap();
         })
     });
 }
@@ -25,7 +25,7 @@ fn context_swap_return(c: &mut Criterion) {
                 let mut stack = vec![0u64; 1024].into_boxed_slice();
                 let mut parent = ContextHandle::new();
                 let child =
-                    ContextHandle::create_and_init(&mut *stack, &mut parent, f as usize, &[])
+                    ContextHandle::create_and_init(&mut *stack, &mut parent, f as usize, &[], std::ptr::null_mut())
                         .unwrap();
                 (stack, parent, child)
             },
@@ -48,7 +48,7 @@ fn context_init_swap_return(c: &mut Criterion) {
             |mut stack| {
                 let mut parent = ContextHandle::new();
                 let child =
-                    ContextHandle::create_and_init(&mut *stack, &mut parent, f as usize, &[])
+                    ContextHandle::create_and_init(&mut *stack, &mut parent, f as usize, &[], std::ptr::null_mut())
                         .unwrap();
                 unsafe { Context::swap(&mut parent, &child) };
                 stack
@@ -337,7 +337,7 @@ fn context_init_swap_return_many_args(c: &mut Criterion) {
             |mut stack| {
                 let mut parent = ContextHandle::new();
                 let child =
-                    ContextHandle::create_and_init(&mut *stack, &mut parent, f as usize, &args)
+                    ContextHandle::create_and_init(&mut *stack, &mut parent, f as usize, &args, std::ptr::null_mut())
                         .unwrap();
                 unsafe { Context::swap(&mut parent, &child) };
                 stack
