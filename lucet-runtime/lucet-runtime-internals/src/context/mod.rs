@@ -34,6 +34,7 @@ struct GpRegs {
     r13: u64,
     r14: u64,
     r15: u64,
+    r8: u64
 }
 
 impl GpRegs {
@@ -47,6 +48,7 @@ impl GpRegs {
             r13: 0,
             r14: 0,
             r15: 0,
+            r8: 0,
         }
     }
 }
@@ -195,9 +197,10 @@ impl ContextHandle {
         parent: &mut ContextHandle,
         fptr: usize,
         args: &[Val],
+        heap: *mut core::ffi::c_void,
     ) -> Result<ContextHandle, Error> {
         let mut child = ContextHandle::new();
-        Context::init(stack, parent, &mut child, fptr, args)?;
+        Context::init(stack, parent, &mut child, fptr, args, heap)?;
         Ok(child)
     }
 }
@@ -287,6 +290,7 @@ impl Context {
         child: &mut Context,
         fptr: usize,
         args: &[Val],
+        heap: *mut core::ffi::c_void,
     ) -> Result<(), Error> {
         if !stack_is_aligned(stack) {
             xbail!(Error::UnalignedStack);
@@ -364,6 +368,9 @@ impl Context {
         // Frame pointer: this is only used by the backstop code. It uses it to locate the ctx and
         // parent arguments set above.
         child.gpr.rbp = &mut stack[sp - 2] as *mut u64 as u64;
+
+        // testing out heap pinning
+        child.gpr.r15 = heap as u64;
 
         // Read the sigprocmask to be restored if we ever need to jump out of a signal handler. If
         // this isn't possible, die.
@@ -569,7 +576,7 @@ impl Context {
             // bootstraps into rcx
             3 => self.gpr.r14 = arg,
             // bootstraps into r8
-            4 => self.gpr.r15 = arg,
+            4 => self.gpr.r8 = arg,
             // bootstraps into r9
             5 => self.gpr.rbx = arg,
             _ => panic!("unexpected gp register index {}", ix),

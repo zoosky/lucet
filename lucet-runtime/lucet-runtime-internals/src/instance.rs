@@ -797,7 +797,8 @@ impl Instance {
 
         self.entrypoint = Some(func.ptr);
 
-        let mut args_with_vmctx = vec![Val::from(self.alloc.slot().heap)];
+        let heap = self.alloc.slot().heap;
+        let mut args_with_vmctx = vec![Val::from(heap)];
         args_with_vmctx.extend_from_slice(args);
 
         HOST_CTX.with(|host_ctx| {
@@ -807,6 +808,7 @@ impl Instance {
                 &mut self.ctx,
                 func.ptr.as_usize(),
                 &args_with_vmctx,
+                heap,
             )
         })?;
 
