@@ -56,6 +56,10 @@ macro_rules! init_and_swap {
                 parent_regs.as_mut().unwrap(),
                 $fn as usize,
                 &[$( $args ),*],
+                // this is the Context heap pointer, eventually put in r15.
+                // because it's not an argument by the ABI, either it's used (by guest code)
+                // or ignored and overwritten (by compiler-generated code)
+                std::ptr::null_mut(),
             ).unwrap()));
 
             child_regs = child;

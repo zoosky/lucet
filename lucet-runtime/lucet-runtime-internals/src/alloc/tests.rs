@@ -607,6 +607,7 @@ macro_rules! alloc_tests {
                     &mut parent,
                     heap_touching_child as usize,
                     &[Val::CPtr(heap_ptr)],
+                    heap_ptr,
                 )
                 .expect("context init succeeds");
                 Context::swap(&mut parent, &child);
@@ -649,6 +650,7 @@ macro_rules! alloc_tests {
                     &mut parent,
                     stack_pattern_child as usize,
                     &[Val::CPtr(heap_ptr)],
+                    heap_ptr,
                 )
                 .expect("context init succeeds");
                 Context::swap(&mut parent, &child);

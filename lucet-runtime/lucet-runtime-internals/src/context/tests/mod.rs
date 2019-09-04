@@ -7,9 +7,9 @@ use std::slice;
 #[test]
 fn context_offsets_correct() {
     assert_eq!(offset_of!(Context, gpr), 0);
-    assert_eq!(offset_of!(Context, fpr), 8 * 8);
-    assert_eq!(offset_of!(Context, retvals_gp), 8 * 8 + 8 * 16);
-    assert_eq!(offset_of!(Context, retval_fp), 8 * 8 + 8 * 16 + 8 * 2);
+    assert_eq!(offset_of!(Context, fpr), 10 * 8);
+    assert_eq!(offset_of!(Context, retvals_gp), 10 * 8 + 8 * 16);
+    assert_eq!(offset_of!(Context, retval_fp), 10 * 8 + 8 * 16 + 8 * 2);
 }
 
 #[test]
@@ -32,8 +32,13 @@ fn init_rejects_unaligned() {
 
     // now we have the unaligned stack, let's make sure it blows up right
     let mut parent = ContextHandle::new();
-    let res =
-        ContextHandle::create_and_init(&mut stack_unaligned, &mut parent, dummy as usize, &[]);
+    let res = ContextHandle::create_and_init(
+        &mut stack_unaligned,
+        &mut parent,
+        dummy as usize,
+        &[],
+        std::ptr::null_mut(),
+    );
 
     if let Err(Error::UnalignedStack) = res {
         assert!(true);
