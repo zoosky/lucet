@@ -196,8 +196,8 @@ impl<'a> Compiler<'a> {
             cranelift_native::builder().expect("host machine is not a supported target");
         flags_builder.enable("enable_verifier").unwrap();
         flags_builder.enable("is_pic").unwrap();
-        flags_builder.enable("enable_pinned_reg");
-        flags_builder.enable("use_pinned_reg_as_heap_base");
+        flags_builder.enable("enable_pinned_reg").unwrap();
+        flags_builder.enable("use_pinned_reg_as_heap_base").unwrap();
         flags_builder.set("opt_level", opt_level.to_flag()).unwrap();
         isa_builder.finish(settings::Flags::new(flags_builder))
     }

@@ -34,7 +34,7 @@ struct GpRegs {
     r13: u64,
     r14: u64,
     r15: u64,
-    r8: u64
+    r8: u64,
 }
 
 impl GpRegs {
