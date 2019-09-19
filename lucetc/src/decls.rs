@@ -5,6 +5,7 @@ use crate::module::{ModuleInfo, UniqueFuncIndex};
 use crate::name::Name;
 use crate::runtime::{Runtime, RuntimeFunc};
 use crate::table::TABLE_SYM;
+use crate::types::to_lucet_signature;
 use cranelift_codegen::entity::{EntityRef, PrimaryMap};
 use cranelift_codegen::ir;
 use cranelift_codegen::isa::TargetFrontendConfig;
@@ -21,7 +22,6 @@ use lucet_module::{
     ModuleData, Signature as LucetSignature, UniqueSignatureIndex,
 };
 use std::collections::HashMap;
-use std::convert::TryFrom;
 
 #[derive(Debug)]
 pub struct FunctionDecl<'a> {
@@ -197,7 +197,7 @@ impl<'a> ModuleDecls<'a> {
         decl_linkage: Linkage,
         signature: ir::Signature,
     ) -> Result<UniqueFuncIndex, LucetcError> {
-        let (new_funcidx, _) = self.info.declare_func_with_sig(signature);
+        let (new_funcidx, _) = self.info.declare_func_with_sig(signature)?;
 
         self.declare_function(clif_module, decl_sym, decl_linkage, new_funcidx)?;
 
@@ -341,6 +341,9 @@ impl<'a> ModuleDecls<'a> {
                         Err(format_err!("inconsistent state: global {} is declared as an import but has no entry in imported_globals", ix.as_u32()))
                         .context(LucetcErrorKind::TranslatingModule)
                     }
+                }
+                GlobalInit::V128Const(_) => {
+                    Err(format_err!("unsupported type: V128").context(LucetcErrorKind::Unsupported))
                 }
             }?;
 
@@ -530,7 +533,7 @@ impl<'a> ModuleDecls<'a> {
             .signatures
             .values()
             .map(|sig| {
-                LucetSignature::try_from(sig)
+                to_lucet_signature(sig)
                     .map_err(|e| format_err!("error converting cranelift sig to wasm sig: {:?}", e))
                     .context(LucetcErrorKind::TranslatingModule)
             })

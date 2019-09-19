@@ -77,7 +77,7 @@ _lucet_context_bootstrap:
 
     .cfi_escape 0x0f, /* DW_CFA_def_cfa_expression */ \
                 8, /* uleb128 length of expression bytes */ \
-                0x76, 0x18, /* DW_OP_breg5 (put rbp + 24 on the stack; should be a pointer to the parent context's address) */ \
+                0x76, 0x08, /* DW_OP_breg5 (put rbp + 8 on the stack; should be a pointer to the parent context's address) */ \
                 0x06, /* DW_OP_deref should then leave the parent context pointer on the stack */ \
                 0x23, 0x08, /* DW_OP_plus_uconst (add 8 to the base of context to point to saved rsp) */ \
                 0x06, /* deref */ \
@@ -89,7 +89,7 @@ _lucet_context_bootstrap:
 
     .cfi_escape 0x16, 0x07, /* DW_CFA_val_expression(7=rsp) */ \
                 8, /* uleb128 length of expression bytes */ \
-                0x76, 0x18, /* DW_OP_breg5 (put rbp + 24 on the stack; should be a pointer to the parent context's address) */ \
+                0x76, 0x08, /* DW_OP_breg5 (put rbp + 8 on the stack; should be a pointer to the parent context's address) */ \
                 0x06, /* DW_OP_deref should then leave the parent context pointer on the stack */ \
                 0x23, 0x08, /* DW_OP_plus_uconst (add 8 to the base of context to point to saved rsp) */ \
                 0x06, /* deref */ \
@@ -100,43 +100,43 @@ _lucet_context_bootstrap:
 
     .cfi_escape 0x10, 0x03, /* DW_CFA_expression(3=rbx) */ \
                 3, /* uleb128 length of expression bytes */ \
-                0x76, 0x18, /* DW_OP_breg5 (put rbp + 24 on the stack; should be a pointer to the parent context's address) */ \
+                0x76, 0x08, /* DW_OP_breg5 (put rbp + 8 on the stack; should be a pointer to the parent context's address) */ \
                 0x06 /* DW_OP_deref should then leave the parent context pointer on the stack */ \
                 /* rbx is at offset 0 */
 
     .cfi_escape 0x10, 0x06, /* DW_CFA_expression(6=rbp) */ \
                 5, /* uleb128 length of expression bytes */ \
-                0x76, 0x18, /* DW_OP_breg5 (put rbp + 24 on the stack; should be a pointer to the parent context's address) */ \
+                0x76, 0x08, /* DW_OP_breg5 (put rbp + 8 on the stack; should be a pointer to the parent context's address) */ \
                 0x06, /* DW_OP_deref should then leave the parent context pointer on the stack */ \
                 0x23, 0x10 /* DW_OP_plus_uconst (add 16 to the base of context to point to saved rbp) */
 
     .cfi_escape 0x10, 0x05, /* DW_CFA_expression(5=rdi) */ \
                 5, /* uleb128 length of expression bytes */ \
-                0x76, 0x18, /* DW_OP_breg5 (put rbp + 24 on the stack; should be a pointer to the parent context's address) */ \
+                0x76, 0x08, /* DW_OP_breg5 (put rbp + 8 on the stack; should be a pointer to the parent context's address) */ \
                 0x06, /* DW_OP_deref should then leave the parent context pointer on the stack */ \
                 0x23, 0x18 /* DW_OP_plus_uconst (add 24 to the base of context to point to saved rdi) */
 
     .cfi_escape 0x10, 0x0c, /* DW_CFA_expression(12=r12) */ \
                 5, /* uleb128 length of expression bytes */ \
-                0x76, 0x18, /* DW_OP_breg5 (put rbp + 24 on the stack; should be a pointer to the parent context's address) */ \
+                0x76, 0x08, /* DW_OP_breg5 (put rbp + 8 on the stack; should be a pointer to the parent context's address) */ \
                 0x06, /* DW_OP_deref should then leave the parent context pointer on the stack */ \
                 0x23, 0x20 /* DW_OP_plus_uconst (add 32 to the base of context to point to saved r12) */
 
     .cfi_escape 0x10, 0x0d, /* DW_CFA_expression(13=r13) */ \
                 5, /* uleb128 length of expression bytes */ \
-                0x76, 0x18, /* DW_OP_breg5 (put rbp + 24 on the stack; should be a pointer to the parent context's address) */ \
+                0x76, 0x08, /* DW_OP_breg5 (put rbp + 8 on the stack; should be a pointer to the parent context's address) */ \
                 0x06, /* DW_OP_deref should then leave the parent context pointer on the stack */ \
                 0x23, 0x28 /* DW_OP_plus_uconst (add 40 to the base of context to point to saved r13) */
 
     .cfi_escape 0x10, 0x0e, /* DW_CFA_expression(14=r14) */ \
                 5, /* uleb128 length of expression bytes */ \
-                0x76, 0x18, /* DW_OP_breg5 (put rbp + 24 on the stack; should be a pointer to the parent context's address) */ \
+                0x76, 0x08, /* DW_OP_breg5 (put rbp + 8 on the stack; should be a pointer to the parent context's address) */ \
                 0x06, /* DW_OP_deref should then leave the parent context pointer on the stack */ \
                 0x23, 0x30 /* DW_OP_plus_uconst (add 48 to the base of context to point to saved r14) */
 
     .cfi_escape 0x10, 0x0f, /* DW_CFA_expression(15=r15) */ \
                 5, /* uleb128 length of expression bytes */ \
-                0x76, 0x18, /* DW_OP_breg5 (put rbp + 24 on the stack; should be a pointer to the parent context's address) */ \
+                0x76, 0x08, /* DW_OP_breg5 (put rbp + 8 on the stack; should be a pointer to the parent context's address) */ \
                 0x06, /* DW_OP_deref should then leave the parent context pointer on the stack */ \
                 0x23, 0x38 /* DW_OP_plus_uconst (add 56 to the base of context to point to saved r15) */
 
@@ -157,8 +157,10 @@ _lucet_context_bootstrap:
 #endif
 lucet_context_backstop:
 _lucet_context_backstop:
-    mov 16(%rbp), %rdi  /* own context to arg 1 */
-    mov 24(%rbp), %rsi  /* parent context to arg 2 */
+    // Note that `rbp` here really has no relation to any stack!
+    // it happens to be an available pointer we can hang the contexts to swap off of.
+    mov (%rbp), %rdi  /* own context */
+    mov 8(%rbp), %rsi  /* parent context */
     mov %rax, (8*8 + 8*16 + 8*0)(%rdi) /* store return values before swapping back -- offset is offsetof(struct lucet_context, retvals) */
     mov %rdx, (8*8 + 8*16 + 8*1)(%rdi)
     movdqu %xmm0, (8*8 + 8*16 + 8*2)(%rdi) /* floating-point return value */

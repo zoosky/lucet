@@ -18,6 +18,7 @@ mod sparsedata;
 mod stack_probe;
 mod table;
 mod traps;
+mod types;
 
 use crate::load::read_bytes;
 pub use crate::{
@@ -50,6 +51,7 @@ pub struct Lucetc {
     pk: Option<PublicKey>,
     sign: bool,
     verify: bool,
+    count_instructions: bool,
 }
 
 pub trait AsLucetc {
@@ -98,6 +100,8 @@ pub trait LucetcOpts {
     fn with_verify(self) -> Self;
     fn sign(&mut self);
     fn with_sign(self) -> Self;
+    fn count_instructions(&mut self, enable_count: bool);
+    fn with_count_instructions(self, enable_count: bool) -> Self;
 }
 
 impl<T: AsLucetc> LucetcOpts for T {
@@ -202,6 +206,15 @@ impl<T: AsLucetc> LucetcOpts for T {
         self.sign();
         self
     }
+
+    fn count_instructions(&mut self, count_instructions: bool) {
+        self.as_lucetc().count_instructions = count_instructions;
+    }
+
+    fn with_count_instructions(mut self, count_instructions: bool) -> Self {
+        self.count_instructions(count_instructions);
+        self
+    }
 }
 
 impl Lucetc {
@@ -217,6 +230,7 @@ impl Lucetc {
             sk: None,
             sign: false,
             verify: false,
+            count_instructions: false,
         }
     }
 
@@ -232,6 +246,7 @@ impl Lucetc {
             sk: None,
             sign: false,
             verify: false,
+            count_instructions: false,
         })
     }
 
@@ -271,6 +286,7 @@ impl Lucetc {
             self.opt_level,
             &bindings,
             self.heap.clone(),
+            self.count_instructions,
         )?;
         let obj = compiler.object_file()?;
 
@@ -286,6 +302,7 @@ impl Lucetc {
             self.opt_level,
             &bindings,
             self.heap.clone(),
+            self.count_instructions,
         )?;
 
         compiler

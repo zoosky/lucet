@@ -1,10 +1,10 @@
 use crate::context::Context;
+use crate::error::Error;
 use crate::instance::{
     siginfo_ext::SiginfoExt, FaultDetails, Instance, State, TerminationDetails, CURRENT_INSTANCE,
     HOST_CTX,
 };
 use crate::sysdeps::UContextPtr;
-use failure::Error;
 use lazy_static::lazy_static;
 use libc::{c_int, c_void, siginfo_t, SIGBUS, SIGSEGV};
 use lucet_module::TrapCode;
@@ -90,7 +90,7 @@ impl Instance {
             Ok(res) => res,
             Err(e) => match e.downcast::<TerminationDetails>() {
                 Ok(details) => {
-                    self.state = State::Terminated { details: *details };
+                    self.state = State::Terminating { details: *details };
                     Ok(())
                 }
                 Err(e) => {
@@ -187,7 +187,7 @@ extern "C" fn handle_signal(signum: c_int, siginfo_ptr: *mut siginfo_t, ucontext
             }
             SignalBehavior::Terminate => {
                 // set the state before jumping back to the host context
-                inst.state = State::Terminated {
+                inst.state = State::Terminating {
                     details: TerminationDetails::Signal,
                 };
                 true
@@ -206,7 +206,7 @@ extern "C" fn handle_signal(signum: c_int, siginfo_ptr: *mut siginfo_t, ucontext
                     && !inst.alloc.addr_in_heap_guard(siginfo.si_addr_ext());
 
                 // record the fault and jump back to the host context
-                inst.state = State::Fault {
+                inst.state = State::Faulted {
                     details: FaultDetails {
                         fatal: unknown_fault || outside_guard,
                         trapcode: trapcode,

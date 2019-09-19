@@ -2,6 +2,7 @@
 
 use lucet_module::{
     FunctionSpec, Module, ModuleData, SerializedModule, TableElement, TrapManifest, TrapSite,
+    VersionInfo,
 };
 
 use byteorder::{LittleEndian, ReadBytesExt};
@@ -102,7 +103,10 @@ impl<'a> ArtifactSummary<'a> {
                 .unwrap();
             let mut rdr = Cursor::new(buffer);
 
+            let version = VersionInfo::read_from(&mut rdr).unwrap();
+
             SerializedModule {
+                version,
                 module_data_ptr: rdr.read_u64::<LittleEndian>().unwrap(),
                 module_data_len: rdr.read_u64::<LittleEndian>().unwrap(),
                 tables_ptr: rdr.read_u64::<LittleEndian>().unwrap(),
@@ -211,6 +215,7 @@ fn load_module<'b, 'a: 'b>(
         )
     };
     Module {
+        version: serialized_module.version.clone(),
         module_data,
         tables,
         function_manifest,
@@ -482,15 +487,21 @@ fn print_summary(summary: ArtifactSummary<'_>) {
             "function_manifest_len", serialized_module.function_manifest_len
         );
 
+        let tables_bytes = summary
+            .read_memory(
+                serialized_module.tables_ptr,
+                serialized_module.tables_len * mem::size_of::<&[TableElement]>() as u64,
+            )
+            .unwrap();
         let tables = unsafe {
             std::slice::from_raw_parts(
-                serialized_module.tables_ptr as *const &[TableElement],
+                tables_bytes.as_ptr() as *const &[TableElement],
                 serialized_module.tables_len as usize,
             )
         };
         let mut reconstructed_tables = Vec::new();
         // same situation as trap tables - these slices are valid as if the module was
-        // dlopen'd, but we jsut read it as a flat file. So read through the ELF view and use
+        // dlopen'd, but we just read it as a flat file. So read through the ELF view and use
         // pointers to that for the real slices.
 
         for table in tables {

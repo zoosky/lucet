@@ -16,7 +16,7 @@ pub struct ExeConfig {
 impl ExeConfig {
     pub fn parse() -> Result<Self, IDLError> {
         let matches = App::new("lucet-idl")
-            .version("0.1.0")
+            .version(env!("CARGO_PKG_VERSION"))
             .about("lucet_idl code generator")
             .arg(
                 Arg::with_name("input")
@@ -64,7 +64,7 @@ fn doit() -> Result<(), IDLError> {
         None => Box::new(io::stdout()),
     };
 
-    run(&exe_config.config, &source, output)?;
+    run(&exe_config.config, &exe_config.input_path, output)?;
 
     Ok(())
 }
