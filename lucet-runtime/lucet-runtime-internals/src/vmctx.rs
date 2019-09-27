@@ -277,6 +277,7 @@ impl Vmctx {
     /// from its own context.
     ///
     /// ```no_run
+    /// # #![feature(unwind_attributes)]
     /// use lucet_runtime_internals::{lucet_hostcalls, lucet_hostcall_terminate};
     /// use lucet_runtime_internals::vmctx::{lucet_vmctx, Vmctx};
     ///
